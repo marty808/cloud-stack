@@ -66,7 +66,6 @@ services:
       - data:/data
     depends_on:
       vaultwarden:
-        condition: service_healthy
       webdav-sync:
         condition: service_healthy
 
@@ -93,7 +92,6 @@ services:
     restart: always
     depends_on:
       vaultwarden:
-        condition: service_healthy
       webdav-sync:
         condition: service_healthy
 
