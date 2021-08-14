@@ -1,0 +1,117 @@
+version: "2.3"
+#project-name: frontend
+services:
+  ddns-updater:
+    image: qmcgaw/ddns-updater
+#    ports:
+#      - 28000:8000/tcp
+
+    environment:
+      # for multiline we need YAML style - no '=' and no dashes
+      CONFIG: >-
+          {"settings":
+            [
+              {
+                "provider": "strato",
+                "domain": "${DDNS_DOMAIN}",
+                "host": "@",
+                "password": "${DDNS_PASSWORD}",
+                "ip_version": "ipv4",
+                "provider_ip": false
+              },
+              {
+                "provider": "strato",
+                "domain": "${DDNS_DOMAIN}",
+                "host": "@",
+                "password": "${DDNS_PASSWORD}",
+                "ip_version": "ipv6",
+                "provider_ip": false
+              }
+            ]
+          }
+      PERIOD: '5m'
+      UPDATE_COOLDOWN_PERIOD: '5m'
+      PUBLICIP_FETCHERS: 'all'
+      PUBLICIP_HTTP_PROVIDERS: 'all'
+      PUBLICIPV4_HTTP_PROVIDERS: 'all'
+      PUBLICIPV6_HTTP_PROVIDERS: 'all'
+      PUBLICIP_DNS_PROVIDERS: 'all'
+      PUBLICIP_DNS_TIMEOUT: '3s'
+      HTTP_TIMEOUT: '10s'
+      IPV6_PREFIX: '/64'
+      TZ: 'Europe/Berlin'
+
+      # Web UI
+      LISTENING_PORT: 8000
+      ROOT_URL: '/'
+
+      # Backup
+      BACKUP_PERIOD: 0 # 0 to disable
+      BACKUP_DIRECTORY: '/updater/data'
+
+      # Other
+      LOG_LEVEL: 'info'
+      LOG_CALLER: 'hidden'
+      SHOUTRRR_ADDRESSES:
+    restart: always
+
+
+# ipv6nat for working with nat
+  ipv6nat:
+    image: robbertkl/ipv6nat
+    privileged: true
+    network_mode: "host"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /lib/modules:/lib/modules:ro
+
+  webdav-sync:
+    image: ghcr.io/marty808/rclone-sync
+    restart: always
+    environment:
+      - WEBDAV_HOST=${WEBDAV_HOST}
+      - WEBDAV_PATH=${WEBDAV_PATH}/traefik
+      - WEBDAV_USER=${WEBDAV_USER}
+      - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+    volumes:
+      - traefik:/data
+
+  traefik:
+    image: traefik:latest
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik:/etc/traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`${DDNS_DOMAIN}`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_CRED}"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`${DDNS_DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=secHeaders@file,traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=http"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "providers.file.filename=/etc/traefik/dynamic_conf.yml"
+
+volumes:
+  traefik:
+
+networks:
+  default:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        # must be a ULA range
+        - subnet: fd00:dead:beef::/48

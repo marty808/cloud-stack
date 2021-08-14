@@ -1,0 +1,101 @@
+version: '2'
+#project_name: vaultwarden-stack
+services:
+  webdav-sync:
+    image: ghcr.io/marty808/rclone-sync
+    restart: always
+    environment:
+      - WEBDAV_HOST=${WEBDAV_HOST}
+      - WEBDAV_PATH=${WEBDAV_PATH}/vaultwarden
+      - WEBDAV_USER=${WEBDAV_USER}
+      - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+    volumes:
+      - data:/data
+      - log:/data/log
+      - fail2ban:/data/fail2ban
+
+  vaultwarden:
+    image: vaultwarden/server:1.22.2
+    hostname: vault
+    restart: always
+    environment:
+      - WEBSOCKET_ENABLED=true
+      - ADMIN_TOKEN=${VW_ADMIN_TOKEN}
+      - SIGNUP_ALLOWED=false
+      - DOMAIN=${VW_DOMAIN}
+      - LOG_FILE=/log/vaultwarden.log
+    networks:
+      - default
+      - traefik
+    ports:
+      - 80
+    volumes:
+      - data:/data
+      - log:/log
+    depends_on:
+      - webdav-sync
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vaultwarden.entrypoints=http"
+      - "traefik.http.routers.vaultwarden.rule=Host(`${VW_DOMAIN}`)" ## Hier anpassen ##
+      - "traefik.http.middlewares.vaultwarden-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.vaultwarden.middlewares=vaultwarden-https-redirect"
+      - "traefik.http.routers.vaultwarden-secure.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-secure.rule=Host(`${VW_DOMAIN}`)" ## Hier anpassen ##
+      - "traefik.http.routers.vaultwarden-secure.tls=true"
+      - "traefik.http.routers.vaultwarden-secure.tls.certresolver=http"
+      - "traefik.http.routers.vaultwarden-secure.service=vaultwarden"
+      - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
+      - "traefik.docker.network=frontend_default"
+      - "traefik.http.routers.vaultwarden-secure.middlewares=secHeaders@file"
+
+  backup:
+    image: bruceforce/bw_backup
+    hostname: backup-vw
+    restart: always
+    environment:
+      - BACKUP_FILE=/data/db_backup/backup.sqlite3
+      - CRON_TIME=0 3 * * *
+      - DB_FILE=/data/db.sqlite3
+      - DELETE_AFTER=30
+      - UID=0
+      - GID=0
+      - TZ=Europe/Berlin
+    volumes:
+      - data:/data
+    depends_on:
+      - vaultwarden
+
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    network_mode: "host"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - fail2ban:/data
+      - log:/var/log:ro
+    environment:
+      - TZ=Europe/Berlin
+      - F2B_LOG_TARGET=STDOUT
+      - F2B_LOG_LEVEL=INFO
+      - F2B_DB_PURGE_AGE=1d
+#      - SSMTP_HOST=${F2B_SSMTP_HOST}
+#      - SSMTP_PORT=${F2B_SSMTP_PORT}
+#      - SSMTP_HOSTNAME=${F2B_SSMTP_HOSTNAME}
+#      - SSMTP_USER=${F2B_SSMTP_USER}
+#      - SSMTP_PASSWORD=${F2B_SSMTP_PASSWORD}
+#      - SSMTP_TLS=YES
+    restart: always
+    depends_on:
+      - vaultwarden
+
+volumes:
+  data:
+  log:
+  fail2ban:
+
+networks:
+  traefik:
+    external:
+      name: frontend_default
