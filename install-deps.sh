@@ -13,6 +13,3 @@ echo '{
 
 # reload docker
 systemctl restart docker
-
-# 2. install docker-compose
-apt-get update  && apt-get install -y docker-compose
