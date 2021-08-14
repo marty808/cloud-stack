@@ -103,7 +103,7 @@ services:
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "providers.file.filename=/etc/traefik/dynamic_conf.yml"
     # because of shared volume we need some initial time to make it ready
-    command: sleep 30 && traefik
+    command: /bin/sh -c "sleep 30" && traefik
 
 volumes:
   traefik:

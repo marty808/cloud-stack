@@ -49,7 +49,7 @@ services:
       - "traefik.docker.network=frontend_default"
       - "traefik.http.routers.vaultwarden-secure.middlewares=secHeaders@file"
     # because of shared volume we need some initial time to make it ready
-    command: sleep 30 && ./start.sh
+    command: sh -c "sleep 30" && ./start.sh
 
   backup:
     image: bruceforce/bw_backup
@@ -92,7 +92,7 @@ services:
     depends_on:
       - vaultwarden
     # because of shared volume we need some initial time to make it ready
-    command: sleep 30 && [ "fail2ban-server", "-f", "-x", "-v", "start" ]
+    command: sh -c "sleep 30" && fail2ban-server -f -x -v start
 
 volumes:
   data:
