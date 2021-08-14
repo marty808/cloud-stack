@@ -1,4 +1,4 @@
-version: "2.3"
+version: "2.1"
 #project-name: frontend
 services:
   ddns-updater:
@@ -102,9 +102,9 @@ services:
       - "traefik.http.routers.traefik-secure.tls.certresolver=http"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "providers.file.filename=/etc/traefik/dynamic_conf.yml"
-    # because of shared volume we need some initial time to make it ready
-    command: /bin/sh -c "sleep 30" && traefik
-
+    depends_on:
+      webdav-sync:
+        condition: service_healthy
 volumes:
   traefik:
 
