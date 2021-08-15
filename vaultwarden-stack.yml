@@ -22,7 +22,8 @@ services:
       - WEBSOCKET_ENABLED=true
       - ADMIN_TOKEN=${VW_ADMIN_TOKEN}
       - SIGNUP_ALLOWED=false
-      - DOMAIN=https://${VW_DOMAIN}
+# env DOMAIN will lead to unhealthy container by using reverse proxy      
+#      - DOMAIN=https://${VW_DOMAIN}
       - LOG_FILE=/log/vaultwarden.log
       - TZ=Europe/Berlin
     networks:
