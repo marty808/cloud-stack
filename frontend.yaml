@@ -73,6 +73,7 @@ services:
       - WEBDAV_PATH=${WEBDAV_PATH}/traefik
       - WEBDAV_USER=${WEBDAV_USER}
       - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+      - TZ=Europe/Berlin
     volumes:
       - traefik:/data
 
@@ -88,6 +89,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik:/etc/traefik
+    environment:
+      - TZ=Europe/Berlin
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"

@@ -24,6 +24,7 @@ services:
       - SIGNUP_ALLOWED=false
       - DOMAIN=https://${VW_DOMAIN}
       - LOG_FILE=/log/vaultwarden.log
+      - TZ=Europe/Berlin
     networks:
       - default
       - traefik
