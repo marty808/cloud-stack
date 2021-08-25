@@ -58,7 +58,7 @@ services:
       - BACKUP_FILE=/data/backup/db/backup.sqlite3
       - CRON_TIME=0 3 * * *
       - DB_FILE=/data/db.sqlite3
-      - ATTACHMENT_BACKUP_FILE=/data/backup/attachments
+      - ATTACHMENT_BACKUP_FILE=/data/backup/attachments/attachments
       - DELETE_AFTER=30
       - TIMESTAMP=true
       - UID=0
