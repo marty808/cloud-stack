@@ -55,10 +55,12 @@ services:
     hostname: backup-vw
     restart: always
     environment:
-      - BACKUP_FILE=/data/db_backup/backup.sqlite3
+      - BACKUP_FILE=/data/backup/db/backup.sqlite3
       - CRON_TIME=0 3 * * *
       - DB_FILE=/data/db.sqlite3
+      - ATTACHMENT_BACKUP_FILE=/data/backup/attachments
       - DELETE_AFTER=30
+      - TIMESTAMP=true
       - UID=0
       - GID=0
       - TZ=Europe/Berlin
