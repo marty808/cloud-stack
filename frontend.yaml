@@ -73,7 +73,7 @@ services:
       - WEBDAV_PATH=${WEBDAV_PATH}/traefik
       - WEBDAV_USER=${WEBDAV_USER}
       - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
-      - UMASK=0027
+      - UMASK=0077
       - TZ=Europe/Berlin
     volumes:
       - traefik:/data
